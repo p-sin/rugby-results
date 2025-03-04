@@ -1,0 +1,38 @@
+name: Testing
+
+permissions: read-all
+
+on:
+  push:
+    paths:
+      - py-template/
+      - tests/
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 - --version 1.6.1
+
+      - name: Add system path to Poetry
+        run: echo $HOME/.poetry/bin >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+            python3 -m venv .venv
+            poetry run pip install --upgrade pip
+            poetry run poetry install
+            pip install -e .
+
+      - name: Run Pytest
+        run: poetry run pytest --cov=py_template --cov-report=term-missing --cov-report=xml tests

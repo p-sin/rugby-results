@@ -1,0 +1,35 @@
+name: nox
+
+permissions: read-all
+
+on: [pull_request, push, workflow_dispatch, workflow_call]
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: .
+
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        os: [ubuntu-latest]
+
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install nox==2024.10.09 poetry==1.6.1
+
+      - name: run nox
+        run: nox --python ${{ matrix.python-version }}

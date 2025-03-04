@@ -1,0 +1,12 @@
+[report]
+show_missing = True
+omit =
+    py_template/no_test
+exclude_lines =
+    pragma: no cover
+
+    def __repr__
+
+    raise AssertionError
+
+    if __name__ == .__main__.:
