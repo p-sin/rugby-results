@@ -1,7 +1,6 @@
 [report]
 show_missing = True
-omit =
-    py_template/no_test
+
 exclude_lines =
     pragma: no cover
 
