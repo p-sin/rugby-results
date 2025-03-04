@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "py-template"
+name = "rugby-results"
 version = "0.1.0"
 description = ""
 license = "MIT"
 authors = ["p-sin <p-sinfield@live.co.uk>"]
 readme = "README.md"
-repository = "https://github.com/p-sin/py-template"
-packages = [{ include = "py_template" }]
+repository = "https://github.com/p-sin/rugby-results"
+packages = [{ include = "results" }]
 
 exclude = [
     ".github",
@@ -46,25 +46,25 @@ coverage = "^7.6.10"
 
 # Scripts that can be called from CLI
 [tool.poetry.scripts]
-py-template = "py_template.a:a"
+results = ""
 
 [tool.mypy]
-mypy_path = ["py_template"]
+mypy_path = ["results"]
 strict = true
 namespace_packages = false
 
 
 [tool.pytest.ini_options]
-pythonpath = ["py_template"]
-addopts = "--cov=py_template"
+pythonpath = ["results"]
+addopts = "--cov=results"
 testpaths = ["tests"]
 
 [tool.coverage.paths]
-source = ["py_template"]
+source = ["results"]
 
 [tool.coverage.run]
 branch = true
-source = ["py_tepmplate"]
+source = ["results"]
 
 [tool.coverage.report]
 show_missing = true
@@ -198,7 +198,7 @@ line-ending = "auto"
 convention = "google"
 
 [tool.ruff.lint.isort]
-known-first-party = ["py_template"]
+known-first-party = ["results"]
 
 
 [build-system]

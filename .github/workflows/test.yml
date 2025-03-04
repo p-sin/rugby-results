@@ -5,7 +5,7 @@ permissions: read-all
 on:
   push:
     paths:
-      - py-template/
+      - results/
       - tests/
   pull_request:
     types: [opened, synchronize, reopened]
@@ -35,4 +35,4 @@ jobs:
             pip install -e .
 
       - name: Run Pytest
-        run: poetry run pytest --cov=py_template --cov-report=term-missing --cov-report=xml tests
+        run: poetry run pytest --cov=results --cov-report=term-missing --cov-report=xml tests
