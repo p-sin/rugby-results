@@ -137,8 +137,6 @@ select = [
     "W",   # pycodestyle (violation of PEP-8)
 ]
 ignore = [
-    "ANN101",  # missing type annotation for self, but hinting self all the time is useless
-    "ANN102",  # missing type annotation for cls but hinting cls all the time is useless
     "ANN401",  # disallows Any, but some elements should be Any when they are external
     "B024",    # forces abstract classes to have at least one abstract method, but sometimes a class is virtually abstract
     "D100",    # missing docstring in public module
@@ -160,8 +158,8 @@ ignore = [
     "PGH003",  # ignore use of specific rule codes when using noqa
     "PLR2004", # allow use of some magic constants
     "T201",    # allow print statements where necessary
-    "TCH001",  # ignore import only for type-checking in "if TYPE_CHECKING" blocks
-    "TCH002",  # ignore type-checking suggestions, trust the devs
+    "TC001",  # ignore import only for type-checking in "if TYPE_CHECKING" blocks
+    "TC002",  # ignore type-checking suggestions, trust the devs
     "UP007",   # ignore or-wise typing for py3.9 support
     "UP035",   # allow use of typing.Callable
 ]
