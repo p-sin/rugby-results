@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, cast
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from bs4.element import PageElement
 from requests.adapters import HTTPAdapter, Retry
 
 config: dict[str, Any] = {
@@ -41,6 +42,46 @@ def make_soup(url: str) -> BeautifulSoup:
     return BeautifulSoup(html, "html.parser")
 
 
+def ensure_tag(input_soup: PageElement | None) -> Tag:
+    """Ensure the input is a populated Tag object.
+
+    Args:
+        input_soup (PageElement | None): The input to check.
+
+    Returns:
+        Tag: The input as a Tag object.
+    """
+    if not input_soup:
+        err = "No data found"
+        raise ValueError(err)
+
+    if not isinstance(input_soup, Tag):
+        err = "Input is not a Tag object"
+        raise TypeError(err)
+
+    return input_soup
+
+
+def ensure_list_tag(input_soup: list[PageElement] | None) -> list[Tag]:
+    """Ensure the input is a populated list of Tag objects.
+
+    Args:
+        input_soup (PageElement | None): The input to check.
+
+    Returns:
+        Tag: The input as a Tag object.
+    """
+    if not input_soup:
+        err = "No data found"
+        raise ValueError(err)
+
+    if not all(isinstance(item, Tag) for item in input_soup):
+        err = "Input is not a list of Tag objects"
+        raise TypeError(err)
+
+    return cast(list[Tag], input_soup)
+
+
 def extract_result_wrappers(soup: BeautifulSoup) -> list[Tag]:
     """Extract the result wrappers from the BeautifulSoup object.
 
@@ -54,22 +95,16 @@ def extract_result_wrappers(soup: BeautifulSoup) -> list[Tag]:
     Returns:
         list[Tag]: A list of all the result wrappers.
     """
-    all_results = soup.find("div", id="results")
-
-    if not all_results:
-        err = "No results found on page"
-        raise ValueError(err)
+    all_results = ensure_tag(soup.find("div", id="results"))
 
     # Drill down to the 'cardContainer' which has all the results in it
-    card_container = (
-        all_results.find("div")  # type: ignore
-        .find("div", id="fnrcardData")
-        .find("div", id="cardContainer")
-    )
+    drill_1 = ensure_tag(all_results.find("div"))
+    drill_2 = ensure_tag(drill_1.find("div", id="fnrcardData"))
+    card_container = ensure_tag(drill_2.find("div", id="cardContainer"))
 
     # Result wrappers contain all results for a week
-    result_wrappers: list[Tag] = card_container.find_all(
-        "div", class_="resultWrapper", recursive=False
+    result_wrappers: list[Tag] = ensure_list_tag(
+        card_container.find_all("div", class_="resultWrapper", recursive=False)
     )
 
     return result_wrappers
@@ -118,11 +153,15 @@ def extract_events(event_data: BeautifulSoup, team_key: int) -> list[str]:
         "div", class_="c042-key-match-events-accordion-body-info"
     )
 
-    events = all_events[team_key].find_all("div", class_="c042-key-match-events-items")  # type: ignore
+    events = ensure_tag(all_events[team_key]).find_all(
+        "div", class_="c042-key-match-events-items"
+    )
     for event in events:
         try:
-            event_class = event.find("div").get("class")[1]  # type: ignore
-            event_return.append(identify_event(event_class))
+            event_tag = ensure_tag(event)
+            event_class = ensure_tag(event_tag.find("div"))
+            event_name = event_class.get("class")[1]  # type: ignore
+            event_return.append(identify_event(event_name))
         except AttributeError:
             continue  # Due to page formatting, some are empty
 
@@ -142,23 +181,19 @@ def extract_match_data(result: Tag) -> tuple[str, str, list[str], list[str], lis
         list[str]: home team events
         list[str]: away team events
     """
-    fixture_data = result.find("div")
+    fixture_data = ensure_tag(result.find("div"))
 
-    if not fixture_data:
-        err = "No fixture data found"
-        raise ValueError(err)
+    home_team_div = ensure_tag(fixture_data.find("div"))
+    home_team = ensure_tag(home_team_div.find("a")).text
+    away_team_div = ensure_list_tag(fixture_data.find_all("div", recursive=False))[2]
+    away_team = ensure_tag(away_team_div.find("a")).text
 
-    home_team = fixture_data.find("div").find("a").text  # type: ignore
-    away_team = fixture_data.find_all("div", recursive=False)[2].find("a").text  # type: ignore
+    score_div = ensure_list_tag(fixture_data.find_all("div", recursive=False))[1]
+    scores = [score.text for score in ensure_list_tag(score_div.find_all("span"))]
 
-    scores = [
-        score.text
-        for score in fixture_data.find_all("div", recursive=False)[1].find_all("span")  # type: ignore
-    ]
-
-    events_url = (
-        result.find("div", class_="coh-style-clicktoinfo").find("a").get("href")  # type: ignore
-    )
+    events_div = ensure_tag(result.find("div", class_="coh-style-clicktoinfo"))
+    events_anchor = ensure_tag(events_div.find("a"))
+    events_url = events_anchor.get("href")
 
     event_data = make_soup(url=f"https://www.englandrugby.com/{events_url}")
     home_events = extract_events(event_data, 0)
@@ -175,9 +210,12 @@ def process_matches(result_wrappers: list[Tag]) -> None:
     """
     for wrapper in result_wrappers:
         # The first div contains the date component
-        date = wrapper.find("div").find("div").text
+        date_div = ensure_tag(wrapper.find("div"))
+        date = ensure_tag(date_div.find("div")).text
 
-        results = wrapper.find_all("div", recursive=False)[1:]
+        results: list[Tag] = ensure_list_tag(wrapper.find_all("div", recursive=False))[
+            1:
+        ]
 
         for result in results:
             home_team, away_team, scores, home_events, away_events = extract_match_data(
@@ -193,6 +231,7 @@ def process_matches(result_wrappers: list[Tag]) -> None:
 
 
 def scrape() -> None:
+    """Control function to scrape the results from the configured URLs."""
     for competition, url in config.items():
         print(competition)
         soup = make_soup(url)
